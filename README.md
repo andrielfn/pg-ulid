@@ -102,3 +102,7 @@ And now ULIDs:
     (3 rows)
 
 As we can see generating ULIDs is slower than generating UUIDs, however, the difference is not that big, and the ULID generation algorithm is still very fast.
+
+## License
+
+This software is distributed under the terms of the MIT License. See the [LICENSE](LICENSE) file for more details.
