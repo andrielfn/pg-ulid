@@ -1,0 +1,17 @@
+# A clang-format style that approximates Python's PEP 7
+# Useful for IDE integration
+BasedOnStyle: Google
+# AlwaysBreakAfterReturnType: All
+AllowShortIfStatementsOnASingleLine: false
+AlignAfterOpenBracket: Align
+# BreakBeforeBraces: Stroustrup
+ColumnLimit: 130
+DerivePointerAlignment: false
+IndentWidth: 2
+Language: Cpp
+PointerAlignment: Right
+ReflowComments: true
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+TabWidth: 2
+UseTab: Never
