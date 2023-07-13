@@ -2,6 +2,20 @@
 
 This extension enables efficient storage and manipulation of 128-bit [Universal Unique Identifiers (ULIDs)](https://github.com/ulid/spec). It introduces the 'ulid' data type, along with functions, operators, and indexing using hash and btree operator classes.
 
+# Why use this extension?
+
+The ULID specification provides an excellent alternative to UUIDs, offering sortable and timestamp-inclusive 128-bit identifiers. This extension for PostgreSQL offers several benefits over other ULID implementations:
+
+- **Blazing-fast performance:** Implemented in **C**, ensuring high-speed operations.
+- **ULID generation:** Built-in support for generating ULIDs using the `gen_ulid()` function.
+- **Seamless integration:** Utilizes the **PostgreSQL extension framework**, making installation and usage hassle-free.
+- **Efficient storage:** Employs a **binary storage format**, resulting in more efficient storage compared to using TEXT for ULIDs.
+- **Native data type:** Introduces the **ULID data type**, enabling the creation of ULID columns.
+- **Indexing support:** Enables the creation of indexes on ULID columns for improved query performance.
+- **Timestamp casting:** Supports casting ULIDs to timestamps for flexible data manipulation.
+- **ULID operators:** Provides a set of operators specifically designed for ULID columns, facilitating query operations.
+- **Optimized performance:** Demonstrates superior performance compared to most other ULID implementations.
+
 ## Installation
 
 Installing this is very simple, all you need to do is this:
