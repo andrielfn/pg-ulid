@@ -54,6 +54,8 @@ It's also possible to cast the ULIDs to a timestamp:
     SELECT '01H588JF7X0005PX34XGNZBBGV'::ulid::timestamp;
     SELECT id, id::timestamp FROM users;
 
+For a more practical example, check out the [IDtools](https://idtools.co/ulid) for ULID generation and decoding.
+
 ## Benchmark
 
 Let's first compare the space required to store ULIDs in a plain TEXT column versus the ulid data type:
