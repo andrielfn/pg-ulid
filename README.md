@@ -52,7 +52,13 @@ You can also cast ULIDs to timestamps:
 It's also possible to cast the ULIDs to a timestamp:
 
     SELECT '01H588JF7X0005PX34XGNZBBGV'::ulid::timestamp;
+    SELECT ulid_to_timestamp('01H588JF7X0005PX34XGNZBBGV');
     SELECT id, id::timestamp FROM users;
+
+And a timestamp to an ULID:
+
+     SELECT '2023-11-16 19:30:15'::timestamp::ulid;
+     SELECT timestamp_to_ulid('2023-11-16 19:30:15');
 
 For a more practical example, check out the [IDtools](https://idtools.co/ulid) for ULID generation and decoding.
 

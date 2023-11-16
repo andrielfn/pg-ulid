@@ -7,6 +7,9 @@ CREATE FUNCTION gen_ulid () RETURNS ulid AS 'ulid' LANGUAGE C STRICT PARALLEL SA
 
 CREATE FUNCTION ulid_to_timestamp (ulid) RETURNS TIMESTAMP AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
 
+CREATE FUNCTION timestamp_to_ulid (TIMESTAMP) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+
+
 --
 --  Input and output functions.
 --
@@ -43,6 +46,11 @@ WITH
 CREATE CAST(ulid AS TIMESTAMP)
 WITH
     FUNCTION ulid_to_timestamp (ulid) AS IMPLICIT;
+
+CREATE CAST (timestamp AS ulid)
+WITH
+    FUNCTION timestamp_to_ulid(timestamp) AS IMPLICIT;
+
 
 --
 -- Operator Functions.

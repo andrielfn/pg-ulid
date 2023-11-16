@@ -20,6 +20,7 @@ struct ulid {
 };
 
 static const char *Encoding = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+static const uint64_t EpochMillis = 946684800000;
 
 // Function prototypes
 PG_FUNCTION_INFO_V1(gen_ulid);
@@ -27,6 +28,9 @@ Datum gen_ulid(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(ulid_to_timestamp);
 Datum ulid_to_timestamp(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1(timestamp_to_ulid);
+Datum timestamp_to_ulid(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(ulid_in);
 Datum ulid_in(PG_FUNCTION_ARGS);
@@ -189,9 +193,33 @@ Datum ulid_to_timestamp(PG_FUNCTION_ARGS) {
   // Subtract the epoch time in milliseconds for January 1, 2000, at 00:00:00 UTC
   // from the timestamp to get the number of milliseconds since that epoch time.
   // The resulting value is then multiplied by 1000 to convert it to seconds.
-  ts = (((TimestampTz)timestamp) - 946684800000) * 1000;
+  ts = (((TimestampTz)timestamp) - EpochMillis) * 1000;
 
   PG_RETURN_TIMESTAMPTZ(ts);
+}
+
+Datum timestamp_to_ulid(PG_FUNCTION_ARGS) {
+    TimestampTz ts = PG_GETARG_TIMESTAMPTZ(0);
+    struct ulid *ulid = (struct ulid *)palloc(sizeof(struct ulid));
+
+    // Convert the timestamp to milliseconds
+    uint64_t timestamp = (uint64_t)(ts / 1000) + EpochMillis;
+
+    // Encode the timestamp in ULID format
+    ulid->data[0] = (uint8_t)(timestamp >> 40);
+    ulid->data[1] = (uint8_t)(timestamp >> 32);
+    ulid->data[2] = (uint8_t)(timestamp >> 24);
+    ulid->data[3] = (uint8_t)(timestamp >> 16);
+    ulid->data[4] = (uint8_t)(timestamp >> 8);
+    ulid->data[5] = (uint8_t)timestamp;
+
+    // Generate random bytes for the randomness part (similar to generate_ulid)
+    uint64_t randomness;
+    pg_strong_random(&randomness, sizeof(randomness));
+    randomness &= 0x7FFFFFFFFFFFFFFF;
+    memcpy(ulid->data + sizeof(timestamp), &randomness, sizeof(randomness));
+
+    PG_RETURN_POINTER(ulid);
 }
 
 // Helper function to decode a ULID character to its corresponding value
