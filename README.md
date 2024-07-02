@@ -120,7 +120,7 @@ Execution Time: 486.315 ms
 And now ULIDs:
 
 ```sql
-tests=# EXPLAIN ANALYZE SELECT gen_ulid(), * FROM generate_series(1, 1000000);
+EXPLAIN ANALYZE SELECT gen_ulid(), * FROM generate_series(1, 1000000);
                                                             QUERY PLAN
 ----------------------------------------------------------------------------------------------------------------------------------
 Function Scan on generate_series  (cost=0.00..12500.00 rows=1000000 width=20) (actual time=95.891..704.558 rows=1000000 loops=1)
