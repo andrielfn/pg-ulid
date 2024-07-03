@@ -2,7 +2,7 @@
 
 This extension enables efficient storage and manipulation of 128-bit [Universal Unique Identifiers (ULIDs)](https://github.com/ulid/spec). It introduces the 'ulid' data type, along with functions, operators, and indexing using hash and btree operator classes.
 
-# Why use this extension?
+## Why use this extension?
 
 The ULID specification provides an excellent alternative to UUIDs, offering sortable and timestamp-inclusive 128-bit identifiers. This extension for PostgreSQL offers several benefits over other ULID implementations:
 
