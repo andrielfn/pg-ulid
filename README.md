@@ -94,9 +94,9 @@ Another simple benchmark we can do is to compare the time required to generate 1
     EXPLAIN ANALYZE SELECT uuid_generate_v4(), * FROM generate_series(1, 1000000);
                                                             QUERY PLAN
     ----------------------------------------------------------------------------------------------------------------------------------
-    Function Scan on generate_series  (cost=0.00..12500.00 rows=1000000 width=20) (actual time=60.599..466.261 rows=1000000 loops=1)
-    Planning Time: 0.594 ms
-    Execution Time: 486.315 ms
+    Function Scan on generate_series  (cost=0.00..12500.00 rows=1000000 width=20) (actual time=102.086..731.433 rows=1000000 loops=1)
+    Planning Time: 0.123 ms
+    Execution Time: 756.309 ms
     (3 rows)
 
 And now ULIDs:
@@ -104,12 +104,14 @@ And now ULIDs:
     tests=# EXPLAIN ANALYZE SELECT gen_ulid(), * FROM generate_series(1, 1000000);
                                                                 QUERY PLAN
     ----------------------------------------------------------------------------------------------------------------------------------
-    Function Scan on generate_series  (cost=0.00..12500.00 rows=1000000 width=20) (actual time=95.891..704.558 rows=1000000 loops=1)
-    Planning Time: 0.125 ms
-    Execution Time: 724.032 ms
+    Function Scan on generate_series  (cost=0.00..12500.00 rows=1000000 width=20) (actual time=89.976..545.106 rows=1000000 loops=1)
+    Planning Time: 0.197 ms
+    Execution Time: 569.543 ms
     (3 rows)
 
-As we can see generating ULIDs is slower than generating UUIDs, however, the difference is not that big, and the ULID generation algorithm is still very fast.
+As we can see generating ULIDs is even faster than generating UUIDs, however, the difference is not that big.
+
+_Reference machine: MacBook M1 Max 2021 running postgresql 14.11_
 
 ## License
 
