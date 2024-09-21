@@ -1,5 +1,12 @@
 #!/bin/bash
 set -e
+
+# Print pg_config output and exit
+echo "Printing pg_config output:"
+pg_config
+echo "Exiting after pg_config output."
+exit 0
+
 # Setup the package
 PKG_NAME="postgresql-ulid"
 PKG_VERSION="${VERSION}"
