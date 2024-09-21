@@ -2,4 +2,4 @@
 
   * Initial release.
 
- -- Your Name <your.email@example.com>  {{DATE}}
+ -- {{MAINTAINER_NAME}} <{{MAINTAINER_EMAIL}}>  {{DATE}}

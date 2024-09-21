@@ -1,10 +1,10 @@
 Source: {{PKG_NAME}}
 Section: database
 Priority: optional
-Maintainer: Your Name <your.email@example.com>
+Maintainer: {{MAINTAINER_NAME}} <{{MAINTAINER_EMAIL}}>
 Build-Depends: debhelper (>= 10), postgresql-server-dev-all
 Standards-Version: 4.5.0
-Homepage: https://github.com/yourusername/postgres-ulid
+Homepage: https://github.com/{{GITHUB_USERNAME}}/postgres-ulid
 
 Package: {{PKG_NAME}}
 Architecture: any

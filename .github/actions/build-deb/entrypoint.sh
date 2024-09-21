@@ -25,11 +25,14 @@ cp /action/debian/* debian/
 # Replace placeholders in the copied files
 sed -i "s/{{PKG_NAME}}/${PKG_NAME}/g" debian/*
 sed -i "s/{{PKG_VERSION}}/${PKG_VERSION}/g" debian/*
-sed -i "s/{{DATE}}/${DATE}/g" debian/*
+sed -i "s/{{DATE}}/$(date -R)/g" debian/*
+sed -i "s/{{MAINTAINER_NAME}}/${MAINTAINER_NAME}/g" debian/*
+sed -i "s/{{MAINTAINER_EMAIL}}/${MAINTAINER_EMAIL}/g" debian/*
+sed -i "s/{{GITHUB_USERNAME}}/${GITHUB_USERNAME}/g" debian/*
 
 # Set up environment variables
-export DEBEMAIL="your.email@example.com"
-export DEBFULLNAME="Your Name"
+export DEBEMAIL="${MAINTAINER_EMAIL}"
+export DEBFULLNAME="${MAINTAINER_NAME}"
 
 # Build the package
 debuild -us -uc -b
