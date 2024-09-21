@@ -1,4 +1,4 @@
-name: Build DEB Package
+name: Build and Test DEB Package
 
 on: [push]
 
@@ -10,8 +10,32 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build DEB package
         uses: ./.github/actions/build-deb
-      # - name: Upload DEB package
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: postgresql-ulid-deb
-      #     path: ./*.deb
+      - name: Upload DEB package
+        uses: actions/upload-artifact@v3
+        with:
+          name: postgresql-ulid-deb
+          path: ./*.deb
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download DEB package
+        uses: actions/download-artifact@v3
+        with:
+          name: postgresql-ulid-deb
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+      - name: Install DEB package
+        run: |
+          sudo dpkg -i *.deb
+          sudo apt-get install -f
+      - name: Test PostgreSQL extension
+        run: |
+          sudo -u postgres psql -c "CREATE EXTENSION ulid;"
+          sudo -u postgres psql -c "SELECT gen_ulid();"
+          sudo -u postgres psql -c "SELECT '01H55TNAQ96WPSWE6WZRCH9G0C'::ulid::timestamp;"
