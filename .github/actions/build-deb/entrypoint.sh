@@ -7,7 +7,7 @@ PKG_FULLNAME="${PKG_NAME}_${PKG_VERSION}"
 
 # Create a temporary directory for building
 BUILD_DIR=$(mktemp -d)
-cp -R . $BUILD_DIR
+cp -r . $BUILD_DIR
 cd $BUILD_DIR
 
 # Create the package directory
@@ -23,7 +23,7 @@ echo "ls /action/debian"
 ls -la /action/debian
 
 # Copy Debian package files from the action directory
-cp /action/debian/* debian/
+cp -r /action/debian/* debian/
 
 # Replace placeholders in the copied files
 sed -i "s/{{PKG_NAME}}/${PKG_NAME}/g" debian/*
