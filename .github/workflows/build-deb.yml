@@ -37,17 +37,26 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: postgresql-ulid-deb
+      - name: Remove pre-existing PostgreSQL installations
+        run: |
+          sudo apt-get remove -y postgresql postgresql-contrib
+          sudo apt-get autoremove -y
+          sudo rm -rf /var/lib/postgresql/
+          sudo rm -rf /etc/postgresql/
+          sudo rm -rf /etc/postgresql-common/
+          sudo userdel -r postgres
+          sudo groupdel postgres
       - name: Install PostgreSQL
         run: |
-          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
           sudo apt-get install -y postgresql-${{ env.PG_VERSION }} postgresql-contrib-${{ env.PG_VERSION }}
-      # - name: Start PostgreSQL service
-      #   run: |
-
-      #     sudo systemctl start postgresql
-      #     sudo systemctl status postgresql
+      - name: Verify PostgreSQL installation
+        run: |
+          pg_lsclusters
+          psql --version
+          sudo -u postgres psql -c "SELECT version();"
       - name: Install package
         run: |
           sudo dpkg -i *.deb
