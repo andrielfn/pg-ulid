@@ -70,5 +70,6 @@ jobs:
         with:
           artifacts: "postgresql-ulid_${{ env.VERSION }}_amd64.deb"
           name: Release ${{ env.VERSION }}
+          tag: ${{ env.VERSION }}
           draft: false
           prerelease: false
