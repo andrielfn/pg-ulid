@@ -43,3 +43,7 @@ mv ../*.deb $GITHUB_WORKSPACE/
 # Clean up
 cd $GITHUB_WORKSPACE
 rm -rf $BUILD_DIR
+
+# List the contents of the package
+echo "Listing package contents:"
+dpkg -L ${PKG_FULLNAME}_amd64.deb || echo "Unable to list package contents. The package may not be found."
