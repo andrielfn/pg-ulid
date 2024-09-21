@@ -18,13 +18,18 @@ cd ${PKG_FULLNAME}
 
 # Create the debian directory
 mkdir debian
+
+# Create debian/compat
+echo "10" >debian/compat
+
+# Create debian/control
 cat >debian/control <<EOF
 Source: ${PKG_NAME}
 Section: database
 Priority: optional
 Maintainer: Your Name <your.email@example.com>
-Build-Depends: debhelper (>= 9), postgresql-server-dev-all
-Standards-Version: 3.9.8
+Build-Depends: debhelper (>= 10), postgresql-server-dev-all
+Standards-Version: 4.5.0
 Homepage: https://github.com/yourusername/postgres-ulid
 
 Package: ${PKG_NAME}
@@ -34,7 +39,7 @@ Description: PostgreSQL ULID extension
  This extension enables efficient storage and manipulation of 128-bit Universal Unique Identifiers (ULIDs).
 EOF
 
-# Create the rules file
+# Create debian/rules
 cat >debian/rules <<EOF
 #!/usr/bin/make -f
 %:
@@ -48,8 +53,22 @@ override_dh_auto_install:
 EOF
 chmod +x debian/rules
 
-# Create the changelog
-dch --create -v ${PKG_VERSION}-1 --package ${PKG_NAME} "Initial release."
+# Create debian/changelog
+cat >debian/changelog <<EOF
+${PKG_NAME} (${PKG_VERSION}-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Your Name <your.email@example.com>  $(date -R)
+EOF
+
+# Create debian/source/format
+mkdir -p debian/source
+echo "3.0 (native)" >debian/source/format
+
+# Set up environment variables
+export DEBEMAIL="your.email@example.com"
+export DEBFULLNAME="Your Name"
 
 # Build the package
 debuild -us -uc -b
