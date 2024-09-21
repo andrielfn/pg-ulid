@@ -1,10 +1,18 @@
 #!/bin/bash
-set -e
+set -ex
 
-# Print pg_config output and exit
+# Determine PostgreSQL version
+PG_VERSION=$(pg_config --version | awk '{print $2}' | cut -d. -f1)
+echo "Detected PostgreSQL version: $PG_VERSION"
+
+# Print pg_config output
 echo "Printing pg_config output:"
 pg_config
-echo "Exiting after pg_config output."
+
+# Print environment variables
+echo "Printing environment variables:"
+env | sort
+
 exit 0
 
 # Setup the package
@@ -53,4 +61,12 @@ rm -rf $BUILD_DIR
 
 # List the contents of the package
 echo "Listing package contents:"
-dpkg -L ${PKG_FULLNAME}_amd64.deb || echo "Unable to list package contents. The package may not be found."
+dpkg -c ${PKG_FULLNAME}_amd64.deb
+
+# Print the contents of key Debian package files
+echo "Contents of debian/control:"
+cat debian/control
+echo "Contents of debian/rules:"
+cat debian/rules
+echo "Contents of debian/install:"
+cat debian/install
