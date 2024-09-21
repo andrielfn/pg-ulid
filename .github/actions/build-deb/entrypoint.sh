@@ -6,9 +6,14 @@ PKG_NAME="postgresql-ulid"
 PKG_VERSION="0.0.1"
 PKG_FULLNAME="${PKG_NAME}_${PKG_VERSION}"
 
+# Create a temporary directory for building
+BUILD_DIR=$(mktemp -d)
+cp -R . $BUILD_DIR
+cd $BUILD_DIR
+
 # Create the package directory
 mkdir -p ${PKG_FULLNAME}
-cp -R . ${PKG_FULLNAME}
+mv * ${PKG_FULLNAME} 2>/dev/null || true
 cd ${PKG_FULLNAME}
 
 # Create the debian directory
@@ -51,3 +56,7 @@ debuild -us -uc -b
 
 # Move the .deb file to the GitHub workspace
 mv ../*.deb $GITHUB_WORKSPACE/
+
+# Clean up
+cd $GITHUB_WORKSPACE
+rm -rf $BUILD_DIR
