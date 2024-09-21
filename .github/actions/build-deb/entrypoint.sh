@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-
 # Setup the package
 PKG_NAME="postgresql-ulid"
 PKG_VERSION="0.0.1"
@@ -19,8 +18,16 @@ cd ${PKG_FULLNAME}
 # Create the debian directory
 mkdir debian
 
+# Debug: Print current directory and list its contents
+echo "Current directory: $(pwd)"
+ls -la
+
+# Debug: Print GITHUB_ACTION_PATH and list its contents
+echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
+ls -la $GITHUB_ACTION_PATH
+
 # Copy Debian package files from the action directory
-cp -R $GITHUB_ACTION_PATH/debian/* debian/
+cp $GITHUB_ACTION_PATH/debian/* debian/
 
 # Replace placeholders in the copied files
 sed -i "s/{{PKG_NAME}}/${PKG_NAME}/g" debian/*
