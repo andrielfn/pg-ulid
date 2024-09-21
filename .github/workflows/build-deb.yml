@@ -21,19 +21,20 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
       - name: Download DEB package
         uses: actions/download-artifact@v3
         with:
           name: postgresql-ulid-deb
-      - name: Install PostgreSQL
+      - name: Install PostgreSQL 16
         run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
-          sudo apt-get install -y postgresql postgresql-contrib
+          sudo apt-get install -y postgresql-16 postgresql-contrib-16
       - name: Start PostgreSQL service
         run: |
-          sudo systemctl start postgresql.service
-          sudo systemctl status postgresql.service
+          sudo systemctl start postgresql
+          sudo systemctl status postgresql
       - name: Install DEB package
         run: |
           sudo dpkg -i *.deb
