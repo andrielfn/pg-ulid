@@ -9,5 +9,7 @@ RUN apt-get update && apt-get install -y \
   fakeroot
 
 COPY entrypoint.sh /entrypoint.sh
+COPY debian /action/debian
+
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

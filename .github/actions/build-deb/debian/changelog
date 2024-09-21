@@ -1,0 +1,5 @@
+{{PKG_NAME}} ({{PKG_VERSION}}-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Your Name <your.email@example.com>  {{DATE}}
