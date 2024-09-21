@@ -1,5 +1,5 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: postgresql-ulid
+Upstream-Name: postgresql-{{PG_VERSION}}-ulid
 Upstream-Contact: {{MAINTAINER_NAME}} <{{MAINTAINER_EMAIL}}>
 Source: https://github.com/{{GITHUB_USERNAME}}/postgres-ulid
 

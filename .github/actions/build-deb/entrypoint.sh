@@ -33,7 +33,8 @@ find debian -type f -print0 | xargs -0 sed -i \
   -e "s/{{DATE}}/$(date -R)/g" \
   -e "s/{{MAINTAINER_NAME}}/${MAINTAINER_NAME}/g" \
   -e "s/{{MAINTAINER_EMAIL}}/${MAINTAINER_EMAIL}/g" \
-  -e "s/{{GITHUB_USERNAME}}/${GITHUB_USERNAME}/g"
+  -e "s/{{GITHUB_USERNAME}}/${GITHUB_USERNAME}/g" \
+  -e "s/{{PG_VERSION}}/${PG_VERSION}/g"
 
 # Set up environment variables
 export DEBEMAIL="${MAINTAINER_EMAIL}"
