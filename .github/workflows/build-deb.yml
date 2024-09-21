@@ -37,17 +37,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: postgresql-ulid-deb
-      - name: Install PostgreSQL ${PG_VERSION}
+      - name: Install PostgreSQL
         run: |
           sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
           sudo apt-get update
           sudo apt-get install -y postgresql-${{ env.PG_VERSION }} postgresql-contrib-${{ env.PG_VERSION }}
-      - name: Start PostgreSQL service
-        run: |
+      # - name: Start PostgreSQL service
+      #   run: |
 
-          sudo systemctl start postgresql
-          sudo systemctl status postgresql
+      #     sudo systemctl start postgresql
+      #     sudo systemctl status postgresql
       - name: Install package
         run: |
           sudo dpkg -i *.deb
@@ -56,7 +56,7 @@ jobs:
         run: |
           psql --version
           sudo dpkg -L postgresql-${{ env.PG_VERSION }}-ulid
-          ls -l /usr/share/postgresql/${{ env.PG_VERSION }}/extension/
+          ls -l /usr/share/postgresql/${{ env.PG_VERSION }}/extension/ | grep ulid
       - name: Test PostgreSQL extension
         run: |
           sudo -u postgres psql -c "SHOW server_version;"
