@@ -35,7 +35,6 @@ Homepage: https://github.com/yourusername/postgres-ulid
 Package: ${PKG_NAME}
 Architecture: any
 Depends: \${shlibs:Depends}, \${misc:Depends}, postgresql-14 | postgresql-15 | postgresql-16 | postgresql (>= 14)
-
 Description: PostgreSQL ULID extension
  This extension enables efficient storage and manipulation of 128-bit Universal Unique Identifiers (ULIDs).
 EOF
