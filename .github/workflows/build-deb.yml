@@ -30,6 +30,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql postgresql-contrib
+      - name: Start PostgreSQL service
+        run: |
+          sudo systemctl start postgresql.service
+          sudo systemctl status postgresql.service
       - name: Install DEB package
         run: |
           sudo dpkg -i *.deb
