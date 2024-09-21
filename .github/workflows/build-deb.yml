@@ -50,11 +50,6 @@ jobs:
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
           sudo apt-get install -y postgresql-${{ env.PG_VERSION }} postgresql-contrib-${{ env.PG_VERSION }}
-      - name: Verify PostgreSQL installation
-        run: |
-          pg_lsclusters
-          psql --version
-          sudo -u postgres psql -c "SELECT version();"
       - name: Install package
         run: |
           sudo dpkg -i *.deb
