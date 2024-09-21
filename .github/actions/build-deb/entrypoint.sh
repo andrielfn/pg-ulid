@@ -26,12 +26,13 @@ ls -la /action/debian
 cp -r /action/debian/* debian/
 
 # Replace placeholders in the copied files
-sed -i "s/{{PKG_NAME}}/${PKG_NAME}/g" debian/*
-sed -i "s/{{PKG_VERSION}}/${PKG_VERSION}/g" debian/*
-sed -i "s/{{DATE}}/$(date -R)/g" debian/*
-sed -i "s/{{MAINTAINER_NAME}}/${MAINTAINER_NAME}/g" debian/*
-sed -i "s/{{MAINTAINER_EMAIL}}/${MAINTAINER_EMAIL}/g" debian/*
-sed -i "s/{{GITHUB_USERNAME}}/${GITHUB_USERNAME}/g" debian/*
+find debian -type f -print0 | xargs -0 sed -i \
+  -e "s/{{PKG_NAME}}/${PKG_NAME}/g" \
+  -e "s/{{PKG_VERSION}}/${PKG_VERSION}/g" \
+  -e "s/{{DATE}}/$(date -R)/g" \
+  -e "s/{{MAINTAINER_NAME}}/${MAINTAINER_NAME}/g" \
+  -e "s/{{MAINTAINER_EMAIL}}/${MAINTAINER_EMAIL}/g" \
+  -e "s/{{GITHUB_USERNAME}}/${GITHUB_USERNAME}/g"
 
 # Set up environment variables
 export DEBEMAIL="${MAINTAINER_EMAIL}"
