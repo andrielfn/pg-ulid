@@ -1,0 +1,16 @@
+name: Build DEB Package
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build DEB package
+        uses: ./.github/actions/build-deb
+      # - name: Upload DEB package
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: postgresql-ulid-deb
+      #     path: ./*.deb
