@@ -57,6 +57,10 @@ jobs:
           psql --version
           sudo dpkg -L postgresql-${{ env.PG_VERSION }}-ulid
           ls -l /usr/share/postgresql/${{ env.PG_VERSION }}/extension/ | grep ulid
+      - name: Start PostgreSQL service
+        run: |
+          sudo systemctl start postgresql
+          sudo systemctl status postgresql
       - name: Test PostgreSQL extension
         run: |
           sudo -u postgres psql -c "SHOW server_version;"
