@@ -2,7 +2,7 @@
 set -e
 # Setup the package
 PKG_NAME="postgresql-ulid"
-PKG_VERSION="0.0.1"
+PKG_VERSION="${VERSION}"
 PKG_FULLNAME="${PKG_NAME}_${PKG_VERSION}"
 
 # Create a temporary directory for building
@@ -29,9 +29,6 @@ find debian -type f -print0 | xargs -0 sed -i \
   -e "s/{{MAINTAINER_NAME}}/${MAINTAINER_NAME}/g" \
   -e "s/{{MAINTAINER_EMAIL}}/${MAINTAINER_EMAIL}/g" \
   -e "s/{{GITHUB_USERNAME}}/${GITHUB_USERNAME}/g"
-
-# Update version in debian/changelog
-sed -i "s/{{VERSION}}/${VERSION}/g" debian/changelog
 
 # Set up environment variables
 export DEBEMAIL="${MAINTAINER_EMAIL}"

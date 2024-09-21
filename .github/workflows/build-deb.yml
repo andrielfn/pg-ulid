@@ -2,13 +2,14 @@ name: Build and Release Package
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches:
+      - master
 
 env:
   MAINTAINER_NAME: "Andriel Nuernberg"
   MAINTAINER_EMAIL: "andrielfn@gmail.com"
   GITHUB_USERNAME: "andrielfn"
+  VERSION: "0.0.1"
 
 jobs:
   build:
@@ -16,8 +17,6 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Set version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
       - name: Build package
         uses: ./.github/actions/build-deb
         env:

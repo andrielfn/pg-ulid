@@ -1,4 +1,4 @@
-postgresql-ulid ({{VERSION}}) unstable; urgency=medium
+postgresql-ulid ({{PKG_VERSION}}) unstable; urgency=medium
 
   * Initial release.
 
