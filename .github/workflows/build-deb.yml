@@ -69,6 +69,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "postgresql-ulid_${{ env.VERSION }}_amd64.deb"
-          name: Release ${{ github.ref_name }}
+          name: Release ${{ env.VERSION }}
           draft: false
           prerelease: false
