@@ -85,7 +85,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "postgresql-${{ env.PG_VERSION }}-ulid_${{ env.VERSION }}_amd64.deb"
-          name: Release ${{ github.sha }}
-          tag: ${{ github.sha }}
+          name: Release ${{ github.sha | slice(0, 7) }}
+          tag: ${{ github.sha | slice(0, 7) }}
           draft: false
           prerelease: false
