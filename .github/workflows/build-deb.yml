@@ -81,11 +81,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: postgresql-ulid-deb
+      - name: Set short git commit SHA
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "postgresql-${{ env.PG_VERSION }}-ulid_${{ env.VERSION }}_amd64.deb"
-          name: Release ${{ github.sha | slice(0, 7) }}
-          tag: ${{ github.sha | slice(0, 7) }}
+          name: Release ${{ env.COMMIT_SHORT_SHA }}
+          tag: ${{ env.COMMIT_SHORT_SHA }}
           draft: false
           prerelease: false
