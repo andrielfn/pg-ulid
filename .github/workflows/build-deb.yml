@@ -1,11 +1,14 @@
-name: Build and Test DEB Package
+name: Build and Release Package
 
-on: [push]
+on:
+  push:
+    tags:
+      - "v*.*.*"
 
 env:
-  MAINTAINER_NAME: "Your Name"
-  MAINTAINER_EMAIL: "your.email@example.com"
-  GITHUB_USERNAME: "yourusername"
+  MAINTAINER_NAME: "Andriel Nuernberg"
+  MAINTAINER_EMAIL: "andrielfn@gmail.com"
+  GITHUB_USERNAME: "andrielfn"
 
 jobs:
   build:
@@ -13,13 +16,16 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build DEB package
+      - name: Set version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+      - name: Build package
         uses: ./.github/actions/build-deb
         env:
           MAINTAINER_NAME: ${{ env.MAINTAINER_NAME }}
           MAINTAINER_EMAIL: ${{ env.MAINTAINER_EMAIL }}
           GITHUB_USERNAME: ${{ env.GITHUB_USERNAME }}
-      - name: Upload DEB package
+          VERSION: ${{ env.VERSION }}
+      - name: Upload package
         uses: actions/upload-artifact@v3
         with:
           name: postgresql-ulid-deb
@@ -30,7 +36,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     steps:
-      - name: Download DEB package
+      - name: Download package
         uses: actions/download-artifact@v3
         with:
           name: postgresql-ulid-deb
@@ -44,7 +50,7 @@ jobs:
         run: |
           sudo systemctl start postgresql
           sudo systemctl status postgresql
-      - name: Install DEB package
+      - name: Install package
         run: |
           sudo dpkg -i *.deb
           sudo apt-get install -f
@@ -53,3 +59,20 @@ jobs:
           sudo -u postgres psql -c "CREATE EXTENSION ulid;"
           sudo -u postgres psql -c "SELECT gen_ulid();"
           sudo -u postgres psql -c "SELECT '01H55TNAQ96WPSWE6WZRCH9G0C'::ulid::timestamp;"
+
+  release:
+    name: Create Release
+    needs: [build, test]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v3
+        with:
+          name: postgresql-ulid-deb
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "postgresql-ulid_${{ env.VERSION }}_amd64.deb"
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
