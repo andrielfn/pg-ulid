@@ -20,7 +20,7 @@ cd ${PKG_FULLNAME}
 mkdir debian
 
 # Copy Debian package files from the action directory
-cp -R /action/debian/* debian/
+cp -R $GITHUB_ACTION_PATH/debian/* debian/
 
 # Replace placeholders in the copied files
 sed -i "s/{{PKG_NAME}}/${PKG_NAME}/g" debian/*
