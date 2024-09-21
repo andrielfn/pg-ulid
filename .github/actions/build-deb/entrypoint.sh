@@ -9,12 +9,6 @@ echo "Detected PostgreSQL version: $PG_VERSION"
 echo "Printing pg_config output:"
 pg_config
 
-# Print environment variables
-echo "Printing environment variables:"
-env | sort
-
-exit 0
-
 # Setup the package
 PKG_NAME="postgresql-ulid"
 PKG_VERSION="${VERSION}"
@@ -62,11 +56,3 @@ rm -rf $BUILD_DIR
 # List the contents of the package
 echo "Listing package contents:"
 dpkg -c ${PKG_FULLNAME}_amd64.deb
-
-# Print the contents of key Debian package files
-echo "Contents of debian/control:"
-cat debian/control
-echo "Contents of debian/rules:"
-cat debian/rules
-echo "Contents of debian/install:"
-cat debian/install
