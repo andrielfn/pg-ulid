@@ -18,16 +18,12 @@ cd ${PKG_FULLNAME}
 # Create the debian directory
 mkdir debian
 
-# Debug: Print current directory and list its contents
-echo "Current directory: $(pwd)"
-ls -la
-
 # Debug: Print GITHUB_ACTION_PATH and list its contents
-echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
-ls -la $GITHUB_ACTION_PATH
+echo "ls /action/debian"
+ls -la /action/debian
 
 # Copy Debian package files from the action directory
-cp $GITHUB_ACTION_PATH/debian/* debian/
+cp /action/debian/* debian/
 
 # Replace placeholders in the copied files
 sed -i "s/{{PKG_NAME}}/${PKG_NAME}/g" debian/*
