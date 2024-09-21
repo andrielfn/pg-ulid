@@ -27,49 +27,49 @@ jobs:
           name: postgresql-ulid-deb
           path: ./*.deb
 
-  # test:
-  #   name: Test
-  #   needs: build
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Download package
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: postgresql-ulid-deb
-  #     - name: Install PostgreSQL 16
-  #       run: |
-  #         sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-  #         curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
-  #         sudo apt-get update
-  #         sudo apt-get install -y postgresql-16 postgresql-contrib-16
-  #     - name: Start PostgreSQL service
-  #       run: |
-  #         sudo systemctl start postgresql
-  #         sudo systemctl status postgresql
-  #     - name: Install package
-  #       run: |
-  #         sudo dpkg -i *.deb
-  #         sudo apt-get install -f
-  #     - name: Test PostgreSQL extension
-  #       run: |
-  #         sudo -u postgres psql -c "CREATE EXTENSION ulid;"
-  #         sudo -u postgres psql -c "SELECT gen_ulid();"
-  #         sudo -u postgres psql -c "SELECT '01H55TNAQ96WPSWE6WZRCH9G0C'::ulid::timestamp;"
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v3
+        with:
+          name: postgresql-ulid-deb
+      - name: Install PostgreSQL 16
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-16 postgresql-contrib-16
+      - name: Start PostgreSQL service
+        run: |
+          sudo systemctl start postgresql
+          sudo systemctl status postgresql
+      - name: Install package
+        run: |
+          sudo dpkg -i *.deb
+          sudo apt-get install -f
+      - name: Test PostgreSQL extension
+        run: |
+          sudo -u postgres psql -c "CREATE EXTENSION ulid;"
+          sudo -u postgres psql -c "SELECT gen_ulid();"
+          sudo -u postgres psql -c "SELECT '01H55TNAQ96WPSWE6WZRCH9G0C'::ulid::timestamp;"
 
-  # release:
-  #   name: Create Release
-  #   needs: [build, test]
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Download package
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: postgresql-ulid-deb
-  #     - name: Create Release
-  #       uses: ncipollo/release-action@v1
-  #       with:
-  #         artifacts: "postgresql-ulid_${{ env.VERSION }}_amd64.deb"
-  #         name: Release ${{ env.VERSION }}
-  #         tag: ${{ env.VERSION }}
-  #         draft: false
-  #         prerelease: false
+  release:
+    name: Create Release
+    needs: [build, test]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v3
+        with:
+          name: postgresql-ulid-deb
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "postgresql-ulid_${{ env.VERSION }}_amd64.deb"
+          name: Release ${{ env.VERSION }}
+          tag: ${{ env.VERSION }}
+          draft: false
+          prerelease: false
