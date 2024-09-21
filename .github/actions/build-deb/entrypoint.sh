@@ -18,10 +18,6 @@ cd ${PKG_FULLNAME}
 # Create the debian directory
 mkdir debian
 
-# Debug: Print GITHUB_ACTION_PATH and list its contents
-echo "ls /action/debian"
-ls -la /action/debian
-
 # Copy Debian package files from the action directory
 cp -r /action/debian/* debian/
 
