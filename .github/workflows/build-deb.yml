@@ -22,7 +22,7 @@ jobs:
           GITHUB_USERNAME: ${{ env.GITHUB_USERNAME }}
           VERSION: ${{ env.VERSION }}
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: postgresql-ulid-deb
           path: ./*.deb
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Download package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: postgresql-ulid-deb
       - name: Install PostgreSQL 16
@@ -44,6 +44,7 @@ jobs:
           sudo apt-get install -y postgresql-16 postgresql-contrib-16
       - name: Start PostgreSQL service
         run: |
+
           sudo systemctl start postgresql
           sudo systemctl status postgresql
       - name: Install package
@@ -61,15 +62,16 @@ jobs:
     needs: [build, test]
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - name: Download package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: postgresql-ulid-deb
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "postgresql-ulid_${{ env.VERSION }}_amd64.deb"
-          name: Release ${{ env.VERSION }}
-          tag: ${{ env.VERSION }}
+          name: Release ${{ github.sha }}
+          tag: ${{ github.sha }}
           draft: false
           prerelease: false

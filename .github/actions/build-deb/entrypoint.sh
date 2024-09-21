@@ -5,12 +5,8 @@ set -ex
 PG_VERSION=$(pg_config --version | awk '{print $2}' | cut -d. -f1)
 echo "Detected PostgreSQL version: $PG_VERSION"
 
-# Print pg_config output
-echo "Printing pg_config output:"
-pg_config
-
 # Setup the package
-PKG_NAME="postgresql-ulid"
+PKG_NAME="postgresql-${PG_VERSION}-ulid"
 PKG_VERSION="${VERSION}"
 PKG_FULLNAME="${PKG_NAME}_${PKG_VERSION}"
 
