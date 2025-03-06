@@ -7,7 +7,7 @@ env:
   MAINTAINER_EMAIL: "andrielfn@gmail.com"
   GITHUB_USERNAME: "andrielfn"
   VERSION: "0.0.1"
-  PG_VERSION: "16"
+  PG_VERSION: "17"
 
 jobs:
   build:
