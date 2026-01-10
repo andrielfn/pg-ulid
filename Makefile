@@ -5,6 +5,10 @@ EXTENSION = ulid
 DATA = ulid--0.0.1.sql
 MODULES = ulid
 
+# pg_regress configuration
+REGRESS = generation parsing timestamp operators indexing
+REGRESS_OPTS = --inputdir=test --outputdir=test
+
 PG_CONFIG ?= pg_config
 
 CFLAGS=`$(PG_CONFIG) --includedir-server`

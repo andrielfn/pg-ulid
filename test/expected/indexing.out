@@ -1,0 +1,36 @@
+CREATE EXTENSION ulid;
+ERROR:  extension "ulid" already exists
+-- B-tree index (default for PRIMARY KEY)
+CREATE TABLE indexed_ulids (id ulid PRIMARY KEY);
+INSERT INTO indexed_ulids VALUES
+  ('01H539HMN700009Y99Q81VWK04'),
+  ('01H539HMN700009Y99Q81VWK05'),
+  ('01H539HMN700009Y99Q81VWK06');
+-- B-tree index used for equality lookup
+EXPLAIN (COSTS OFF) SELECT * FROM indexed_ulids WHERE id = '01H539HMN700009Y99Q81VWK04'::ulid;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Index Only Scan using indexed_ulids_pkey on indexed_ulids
+   Index Cond: (id = '01H539HMN700009Y99Q81VWK04'::ulid)
+(2 rows)
+
+-- B-tree index used for range queries
+EXPLAIN (COSTS OFF) SELECT * FROM indexed_ulids WHERE id > '01H539HMN700009Y99Q81VWK04'::ulid;
+                          QUERY PLAN                           
+---------------------------------------------------------------
+ Bitmap Heap Scan on indexed_ulids
+   Recheck Cond: (id > '01H539HMN700009Y99Q81VWK04'::ulid)
+   ->  Bitmap Index Scan on indexed_ulids_pkey
+         Index Cond: (id > '01H539HMN700009Y99Q81VWK04'::ulid)
+(4 rows)
+
+-- Hash index support
+CREATE INDEX idx_hash ON indexed_ulids USING hash (id);
+-- Verify hash index can be used
+EXPLAIN (COSTS OFF) SELECT * FROM indexed_ulids WHERE id = '01H539HMN700009Y99Q81VWK04'::ulid;
+                     QUERY PLAN                      
+-----------------------------------------------------
+ Seq Scan on indexed_ulids
+   Filter: (id = '01H539HMN700009Y99Q81VWK04'::ulid)
+(2 rows)
+

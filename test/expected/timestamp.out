@@ -1,0 +1,37 @@
+CREATE EXTENSION ulid;
+ERROR:  extension "ulid" already exists
+-- ULID to timestamp conversion
+SELECT ('01H55TNAQ96WPSWE6WZRCH9G0C'::ulid)::timestamp;
+          timestamp           
+------------------------------
+ Wed Jul 12 19:53:43.401 2023
+(1 row)
+
+-- Boundary values
+SELECT ('00000000000000000000000000'::ulid)::timestamp AS unix_epoch;
+        unix_epoch        
+--------------------------
+ Thu Jan 01 00:00:00 1970
+(1 row)
+
+SELECT ('7ZZZZZZZZZZZZZZZZZZZZZZZZZ'::ulid)::timestamp AS max_timestamp;
+         max_timestamp         
+-------------------------------
+ Tue Aug 02 05:31:50.655 10889
+(1 row)
+
+-- Timestamp to ULID (verify timestamp is preserved)
+SELECT (timestamp_to_ulid('2023-07-12 19:53:43.401'::timestamp))::timestamp;
+      timestamp_to_ulid       
+------------------------------
+ Wed Jul 12 19:53:43.401 2023
+(1 row)
+
+-- Round-trip: timestamp -> ULID -> timestamp (millisecond precision preserved)
+SELECT ts::timestamp(3) = (timestamp_to_ulid(ts))::timestamp::timestamp(3) AS roundtrip_preserved
+FROM (SELECT '2023-07-12 19:53:43.401'::timestamp AS ts) t;
+ roundtrip_preserved 
+---------------------
+ t
+(1 row)
+

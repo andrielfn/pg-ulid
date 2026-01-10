@@ -1,0 +1,15 @@
+CREATE EXTENSION ulid;
+-- Output is valid 26-character ULID
+SELECT length(gen_ulid()::text) = 26 AS valid_length;
+ valid_length 
+--------------
+ t
+(1 row)
+
+-- Multiple generations produce different values (randomness works)
+SELECT gen_ulid() <> gen_ulid() AS unique_values;
+ unique_values 
+---------------
+ t
+(1 row)
+

@@ -1,2 +1,11 @@
+# Build artifacts
 *.o
 *.so
+*.dylib
+*.a
+*.bc
+
+# pg_regress output
+test/results/
+regression.diffs
+regression.out
