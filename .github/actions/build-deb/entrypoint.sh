@@ -9,10 +9,17 @@ else
   echo "Using PostgreSQL version from environment: $PG_VERSION"
 fi
 
-# Use version-specific pg_config for compilation
-export PATH="/usr/lib/postgresql/${PG_VERSION}/bin:$PATH"
-echo "Using pg_config: $(which pg_config)"
-pg_config --version
+# Set version-specific pg_config for compilation
+export PG_CONFIG="/usr/lib/postgresql/${PG_VERSION}/bin/pg_config"
+echo "Using pg_config: $PG_CONFIG"
+$PG_CONFIG --version
+
+# Verify pg_config version matches expected
+DETECTED_VERSION=$($PG_CONFIG --version | awk '{print $2}' | cut -d. -f1)
+if [ "$DETECTED_VERSION" != "$PG_VERSION" ]; then
+  echo "ERROR: pg_config version ($DETECTED_VERSION) does not match expected ($PG_VERSION)"
+  exit 1
+fi
 
 # Setup the package
 PKG_NAME="postgresql-${PG_VERSION}-ulid"
