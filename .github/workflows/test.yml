@@ -16,6 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Remove pre-existing PostgreSQL
+        run: |
+          sudo systemctl stop postgresql || true
+          sudo apt-get remove -y 'postgresql-*' || true
+          sudo rm -rf /var/lib/postgresql /etc/postgresql /var/run/postgresql
+
       - name: Install PostgreSQL ${{ matrix.pg-version }}
         run: |
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -23,20 +29,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
 
-      - name: Build extension
+      - name: Start PostgreSQL and configure access
         run: |
-          export PATH="/usr/lib/postgresql/${{ matrix.pg-version }}/bin:$PATH"
-          make
+          sudo pg_createcluster ${{ matrix.pg-version }} main --start || sudo pg_ctlcluster ${{ matrix.pg-version }} main start
+          sudo -u postgres psql -p 5432 -c "CREATE USER runner SUPERUSER;"
 
-      - name: Install extension
+      - name: Build and install extension
         run: |
-          export PATH="/usr/lib/postgresql/${{ matrix.pg-version }}/bin:$PATH"
-          sudo make install
+          PG_CONFIG=/usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+          make PG_CONFIG=$PG_CONFIG
+          sudo make PG_CONFIG=$PG_CONFIG install
 
       - name: Run tests
+        env:
+          PGPORT: 5432
         run: |
-          export PATH="/usr/lib/postgresql/${{ matrix.pg-version }}/bin:$PATH"
-          # Allow postgres user to write test results
-          sudo mkdir -p test/results
-          sudo chown -R postgres:postgres test/
-          sudo -u postgres make installcheck || (cat test/results/*.diff 2>/dev/null; exit 1)
+          PG_CONFIG=/usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+          make PG_CONFIG=$PG_CONFIG installcheck || (cat test/regression.diffs 2>/dev/null; exit 1)
