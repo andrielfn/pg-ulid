@@ -1,9 +1,18 @@
 #!/bin/bash
 set -ex
 
-# Determine PostgreSQL version
-PG_VERSION=$(pg_config --version | awk '{print $2}' | cut -d. -f1)
-echo "Detected PostgreSQL version: $PG_VERSION"
+# Use PG_VERSION from environment, or detect from pg_config
+if [ -z "$PG_VERSION" ]; then
+  PG_VERSION=$(pg_config --version | awk '{print $2}' | cut -d. -f1)
+  echo "Detected PostgreSQL version: $PG_VERSION"
+else
+  echo "Using PostgreSQL version from environment: $PG_VERSION"
+fi
+
+# Use version-specific pg_config for compilation
+export PATH="/usr/lib/postgresql/${PG_VERSION}/bin:$PATH"
+echo "Using pg_config: $(which pg_config)"
+pg_config --version
 
 # Setup the package
 PKG_NAME="postgresql-${PG_VERSION}-ulid"
@@ -51,5 +60,6 @@ cd $GITHUB_WORKSPACE
 rm -rf $BUILD_DIR
 
 # List the contents of the package
+ARCH=$(dpkg --print-architecture)
 echo "Listing package contents:"
-dpkg -c ${PKG_FULLNAME}_amd64.deb
+dpkg -c ${PKG_FULLNAME}_${ARCH}.deb

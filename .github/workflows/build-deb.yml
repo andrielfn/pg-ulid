@@ -1,42 +1,62 @@
 name: Build and Release Package
 
-on: [push]
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
 
 env:
   MAINTAINER_NAME: "Andriel Nuernberg"
   MAINTAINER_EMAIL: "andrielfn@gmail.com"
   GITHUB_USERNAME: "andrielfn"
-  VERSION: "0.0.1"
-  PG_VERSION: "17"
 
 jobs:
   build:
-    name: Build
+    name: Build PG ${{ matrix.pg-version }}
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        pg-version: [17, 18]
     steps:
       - uses: actions/checkout@v4
+      - name: Get version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="0.0.0-dev"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
       - name: Build package
         uses: ./.github/actions/build-deb
         env:
           MAINTAINER_NAME: ${{ env.MAINTAINER_NAME }}
           MAINTAINER_EMAIL: ${{ env.MAINTAINER_EMAIL }}
           GITHUB_USERNAME: ${{ env.GITHUB_USERNAME }}
-          VERSION: ${{ env.VERSION }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          PG_VERSION: ${{ matrix.pg-version }}
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: postgresql-ulid-deb
+          name: postgresql-${{ matrix.pg-version }}-ulid-deb
           path: ./*.deb
 
   test:
-    name: Test
+    name: Test PG ${{ matrix.pg-version }}
     needs: build
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        pg-version: [17, 18]
     steps:
       - name: Download package
         uses: actions/download-artifact@v4
         with:
-          name: postgresql-ulid-deb
+          name: postgresql-${{ matrix.pg-version }}-ulid-deb
       - name: Remove pre-existing PostgreSQL installations
         run: |
           sudo apt-get remove -y postgresql postgresql-contrib
@@ -49,7 +69,7 @@ jobs:
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
-          sudo apt-get install -y postgresql-${{ env.PG_VERSION }} postgresql-contrib-${{ env.PG_VERSION }}
+          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-contrib-${{ matrix.pg-version }}
       - name: Install package
         run: |
           sudo dpkg -i *.deb
@@ -57,8 +77,8 @@ jobs:
       - name: Verify PostgreSQL and extension installation
         run: |
           psql --version
-          sudo dpkg -L postgresql-${{ env.PG_VERSION }}-ulid
-          ls -l /usr/share/postgresql/${{ env.PG_VERSION }}/extension/ | grep ulid
+          sudo dpkg -L postgresql-${{ matrix.pg-version }}-ulid
+          ls -l /usr/share/postgresql/${{ matrix.pg-version }}/extension/ | grep ulid
       - name: Start PostgreSQL service
         run: |
           sudo systemctl start postgresql
@@ -75,22 +95,22 @@ jobs:
     name: Create Release
     needs: [build, test]
     runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
-      - name: Download package
+      - name: Download all packages
         uses: actions/download-artifact@v4
         with:
-          name: postgresql-ulid-deb
-      - name: Set short git commit SHA
-        id: vars
-        run: |
-          calculatedSha=$(git rev-parse --short ${{ github.sha }})
-          echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
+          path: packages
+          pattern: postgresql-*-ulid-deb
+          merge-multiple: true
+      - name: List packages
+        run: ls -la packages/
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "postgresql-${{ env.PG_VERSION }}-ulid_${{ env.VERSION }}_amd64.deb"
-          name: Release ${{ env.COMMIT_SHORT_SHA }}
-          tag: ${{ env.COMMIT_SHORT_SHA }}
+          artifacts: "packages/*.deb"
+          name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
           draft: false
           prerelease: false
