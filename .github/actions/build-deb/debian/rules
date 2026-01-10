@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+PG_CONFIG = /usr/lib/postgresql/{{PG_VERSION}}/bin/pg_config
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	make PG_CONFIG=$(PG_CONFIG)
+
+override_dh_auto_install:
+	make PG_CONFIG=$(PG_CONFIG) DESTDIR=$(CURDIR)/debian/{{PKG_NAME}} install

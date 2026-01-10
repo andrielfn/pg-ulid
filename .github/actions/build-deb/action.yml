@@ -1,0 +1,5 @@
+name: Build DEB Package
+description: Builds a DEB package for the PostgreSQL ULID extension
+runs:
+  using: docker
+  image: Dockerfile

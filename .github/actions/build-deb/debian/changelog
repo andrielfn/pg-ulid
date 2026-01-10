@@ -1,0 +1,5 @@
+postgresql-{{PG_VERSION}}-ulid ({{PKG_VERSION}}) stable; urgency=medium
+
+  * Initial release.
+
+ -- {{MAINTAINER_NAME}} <{{MAINTAINER_EMAIL}}>  {{DATE}}

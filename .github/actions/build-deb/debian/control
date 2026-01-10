@@ -1,0 +1,15 @@
+Source: {{PKG_NAME}}
+Section: database
+Priority: optional
+Maintainer: {{MAINTAINER_NAME}} <{{MAINTAINER_EMAIL}}>
+Build-Depends: debhelper (>= 10), postgresql-server-dev-all
+Standards-Version: 4.5.0
+Homepage: https://github.com/{{GITHUB_USERNAME}}/pg-ulid
+
+Package: {{PKG_NAME}}
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, postgresql-14 | postgresql-15 | postgresql-16 | postgresql-17 | postgresql-18 | postgresql (>= 14)
+Description: ULID extension for PostgreSQL
+ This package provides a ULID (Universally Unique Lexicographically Sortable
+ Identifier) extension for PostgreSQL. ULIDs are sortable, random, and generate
+ unique 128-bit identifiers.

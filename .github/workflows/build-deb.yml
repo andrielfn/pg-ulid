@@ -1,0 +1,116 @@
+name: Build and Release Package
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+
+env:
+  MAINTAINER_NAME: "Andriel Nuernberg"
+  MAINTAINER_EMAIL: "andrielfn@gmail.com"
+  GITHUB_USERNAME: "andrielfn"
+
+jobs:
+  build:
+    name: Build PG ${{ matrix.pg-version }}
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        pg-version: [15, 16, 17, 18]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="0.0.0-dev"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+      - name: Build package
+        uses: ./.github/actions/build-deb
+        env:
+          MAINTAINER_NAME: ${{ env.MAINTAINER_NAME }}
+          MAINTAINER_EMAIL: ${{ env.MAINTAINER_EMAIL }}
+          GITHUB_USERNAME: ${{ env.GITHUB_USERNAME }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          PG_VERSION: ${{ matrix.pg-version }}
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgresql-${{ matrix.pg-version }}-ulid-deb
+          path: ./*.deb
+
+  test:
+    name: Test PG ${{ matrix.pg-version }}
+    needs: build
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        pg-version: [15, 16, 17, 18]
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: postgresql-${{ matrix.pg-version }}-ulid-deb
+      - name: Remove pre-existing PostgreSQL installations
+        run: |
+          sudo apt-get remove -y postgresql postgresql-contrib
+          sudo apt-get autoremove -y
+          sudo rm -rf /var/lib/postgresql/
+          sudo rm -rf /etc/postgresql/
+          sudo rm -rf /etc/postgresql-common/
+      - name: Install PostgreSQL
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-contrib-${{ matrix.pg-version }}
+      - name: Install package
+        run: |
+          sudo dpkg -i *.deb
+          sudo apt-get install -f
+      - name: Verify PostgreSQL and extension installation
+        run: |
+          psql --version
+          sudo dpkg -L postgresql-${{ matrix.pg-version }}-ulid
+          ls -l /usr/share/postgresql/${{ matrix.pg-version }}/extension/ | grep ulid
+      - name: Start PostgreSQL service
+        run: |
+          sudo systemctl start postgresql
+          sudo systemctl status postgresql
+      - name: Test PostgreSQL extension
+        run: |
+          sudo -u postgres psql -c "SHOW server_version;"
+          sudo -u postgres psql -c "SHOW data_directory;"
+          sudo -u postgres psql -c "CREATE EXTENSION ulid;"
+          sudo -u postgres psql -c "SELECT gen_ulid();"
+          sudo -u postgres psql -c "SELECT '01H55TNAQ96WPSWE6WZRCH9G0C'::ulid::timestamp;"
+
+  release:
+    name: Create Release
+    needs: [build, test]
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          path: packages
+          pattern: postgresql-*-ulid-deb
+          merge-multiple: true
+      - name: List packages
+        run: ls -la packages/
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "packages/*.deb"
+          name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
