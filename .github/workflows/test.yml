@@ -36,4 +36,5 @@ jobs:
       - name: Run tests
         run: |
           export PATH="/usr/lib/postgresql/${{ matrix.pg-version }}/bin:$PATH"
+          sudo chmod -R 777 test/
           sudo -u postgres make installcheck || (cat test/results/*.diff 2>/dev/null; exit 1)
