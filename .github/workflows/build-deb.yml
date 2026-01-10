@@ -2,10 +2,7 @@ name: Build and Release Package
 
 on:
   push:
-    branches: [master]
     tags: ['v*']
-  pull_request:
-    branches: [master]
 
 env:
   MAINTAINER_NAME: "Andriel Nuernberg"
