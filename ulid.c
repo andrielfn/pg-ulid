@@ -25,6 +25,31 @@ struct ulid {
 static const char *Encoding = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 static const uint64_t EpochMillis = 946684800000;
 
+// O(1) decode lookup table: maps ASCII characters to their ULID values (0-31)
+// 0xFF indicates an invalid character
+// Supports both uppercase and lowercase input per ULID spec
+// Note: Using 0xFF instead of -1 since 0 is a valid value ('0' character)
+static const uint8_t DecodeTable[256] = {
+  // Initialize all to 0xFF (invalid), then set valid mappings
+  // Default for all 256 entries:
+  [0 ... 255] = 0xFF,
+  // Digits 0-9
+  ['0'] = 0,  ['1'] = 1,  ['2'] = 2,  ['3'] = 3,  ['4'] = 4,
+  ['5'] = 5,  ['6'] = 6,  ['7'] = 7,  ['8'] = 8,  ['9'] = 9,
+  // Uppercase letters (excluding I, L, O, U per ULID spec)
+  ['A'] = 10, ['B'] = 11, ['C'] = 12, ['D'] = 13, ['E'] = 14,
+  ['F'] = 15, ['G'] = 16, ['H'] = 17, ['J'] = 18, ['K'] = 19,
+  ['M'] = 20, ['N'] = 21, ['P'] = 22, ['Q'] = 23, ['R'] = 24,
+  ['S'] = 25, ['T'] = 26, ['V'] = 27, ['W'] = 28, ['X'] = 29,
+  ['Y'] = 30, ['Z'] = 31,
+  // Lowercase letters (excluding i, l, o, u per ULID spec)
+  ['a'] = 10, ['b'] = 11, ['c'] = 12, ['d'] = 13, ['e'] = 14,
+  ['f'] = 15, ['g'] = 16, ['h'] = 17, ['j'] = 18, ['k'] = 19,
+  ['m'] = 20, ['n'] = 21, ['p'] = 22, ['q'] = 23, ['r'] = 24,
+  ['s'] = 25, ['t'] = 26, ['v'] = 27, ['w'] = 28, ['x'] = 29,
+  ['y'] = 30, ['z'] = 31,
+};
+
 // Function prototypes
 PG_FUNCTION_INFO_V1(gen_ulid);
 Datum gen_ulid(PG_FUNCTION_ARGS);
@@ -215,12 +240,13 @@ Datum timestamp_to_ulid(PG_FUNCTION_ARGS) {
 }
 
 // Helper function to decode a ULID character to its corresponding value
+// Uses O(1) lookup table instead of O(n) strchr for better performance
 static inline uint8_t decodeULIDChar(const char c) {
-  const char *pos = strchr(Encoding, c);
-  if (pos == NULL) {
+  uint8_t val = DecodeTable[(uint8_t)c];
+  if (val == 0xFF) {
     ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("Invalid ULID: invalid character")));
   }
-  return (uint8_t)(pos - Encoding);
+  return val;
 }
 
 // Helper function to decode a ULID string to its binary representation.
@@ -258,7 +284,7 @@ Datum ulid_in(PG_FUNCTION_ARGS) {
 
 Datum ulid_out(PG_FUNCTION_ARGS) {
   struct ulid *ulid = (struct ulid *)PG_GETARG_POINTER(0);
-  char *ulid_str = palloc(17);
+  char *ulid_str = palloc(27);
 
   ulid_to_string(ulid, ulid_str);
 
