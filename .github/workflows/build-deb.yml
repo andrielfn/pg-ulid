@@ -11,11 +11,14 @@ env:
 
 jobs:
   build:
-    name: Build PG ${{ matrix.pg-version }}
-    runs-on: ubuntu-22.04
+    name: Build PG ${{ matrix.pg-version }} (${{ matrix.arch.name }})
+    runs-on: ${{ matrix.arch.runner }}
     strategy:
       matrix:
         pg-version: [15, 16, 17, 18]
+        arch:
+          - { runner: ubuntu-22.04, name: amd64 }
+          - { runner: ubuntu-22.04-arm, name: arm64 }
     steps:
       - uses: actions/checkout@v4
       - name: Get version
@@ -39,21 +42,24 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: postgresql-${{ matrix.pg-version }}-ulid-deb
+          name: postgresql-${{ matrix.pg-version }}-ulid-${{ matrix.arch.name }}-deb
           path: ./*.deb
 
   test:
-    name: Test PG ${{ matrix.pg-version }}
+    name: Test PG ${{ matrix.pg-version }} (${{ matrix.arch.name }})
     needs: build
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.arch.runner }}
     strategy:
       matrix:
         pg-version: [15, 16, 17, 18]
+        arch:
+          - { runner: ubuntu-22.04, name: amd64 }
+          - { runner: ubuntu-22.04-arm, name: arm64 }
     steps:
       - name: Download package
         uses: actions/download-artifact@v4
         with:
-          name: postgresql-${{ matrix.pg-version }}-ulid-deb
+          name: postgresql-${{ matrix.pg-version }}-ulid-${{ matrix.arch.name }}-deb
       - name: Remove pre-existing PostgreSQL installations
         run: |
           sudo apt-get remove -y postgresql postgresql-contrib
@@ -99,7 +105,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: packages
-          pattern: postgresql-*-ulid-deb
+          pattern: postgresql-*-ulid-*-deb
           merge-multiple: true
       - name: List packages
         run: ls -la packages/
