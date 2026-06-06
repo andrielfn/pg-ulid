@@ -30,6 +30,10 @@ CREATE TYPE ulid (
     INPUT = ulid_in,
     OUTPUT = ulid_out,
     INTERNALLENGTH = 16,
+    -- char alignment (like uuid): a 16-byte pass-by-reference value never needs
+    -- alignment padding, so this avoids up to 3 wasted bytes per row and makes
+    -- ulid byte-for-byte identical in storage to uuid.
+    ALIGNMENT = char,
     SEND = ulid_send,
     RECEIVE = ulid_recv
 );
@@ -70,17 +74,13 @@ CREATE CAST (timestamptz AS ulid)
 WITH
     FUNCTION timestamptz_to_ulid (timestamptz) AS ASSIGNMENT;
 
-CREATE FUNCTION ulid_to_uuid (ulid) RETURNS uuid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+-- ulid and uuid have identical on-disk representation (16-byte, pass-by-ref,
+-- char-aligned, plain storage), so these casts are binary (WITHOUT FUNCTION):
+-- no per-value work, and ALTER COLUMN ... TYPE between uuid and ulid becomes a
+-- metadata-only catalog change with no table rewrite.
+CREATE CAST (ulid AS uuid) WITHOUT FUNCTION AS ASSIGNMENT;
 
-CREATE FUNCTION uuid_to_ulid (uuid) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE CAST (ulid AS uuid)
-WITH
-    FUNCTION ulid_to_uuid (ulid) AS ASSIGNMENT;
-
-CREATE CAST (uuid AS ulid)
-WITH
-    FUNCTION uuid_to_ulid (uuid) AS ASSIGNMENT;
+CREATE CAST (uuid AS ulid) WITHOUT FUNCTION AS ASSIGNMENT;
 
 -- Raw 16-byte access. bytea is an untyped blob, so these casts are explicit
 -- only (no implicit/assignment coercion) to avoid surprising conversions; the

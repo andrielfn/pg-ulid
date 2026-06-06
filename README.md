@@ -100,15 +100,24 @@ SELECT '01H588JF7X0005PX34XGNZBBGV'::ulid::uuid;
 SELECT 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid::ulid;
 ```
 
-These casts are defined as `ASSIGNMENT`, so a `ulid` value can be inserted
-directly into a `uuid` column (and vice versa) without an explicit cast — handy
-when migrating an existing `uuid` column to `ulid`:
+`ulid` and `uuid` have an identical on-disk representation (both are 16-byte,
+char-aligned, plain-storage values), so these casts are **binary-coercible** and
+defined as `ASSIGNMENT`. A `ulid` can be inserted directly into a `uuid` column
+(and vice versa) without an explicit cast:
 
 ```sql
 CREATE TABLE legacy (id uuid PRIMARY KEY);
 
--- a ulid value is converted to uuid automatically on insert
+-- a ulid value is stored in the uuid column automatically on insert
 INSERT INTO legacy (id) VALUES (gen_ulid());
+```
+
+Because the representations are identical, converting an existing `uuid` column
+to `ulid` is a **metadata-only change** — no table rewrite, even on a huge
+table:
+
+```sql
+ALTER TABLE legacy ALTER COLUMN id TYPE ulid;  -- instant, no rewrite
 ```
 
 > Note: `uuid` → `ulid` is a pure byte reinterpretation. The leading 48 bits of

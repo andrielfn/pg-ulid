@@ -33,3 +33,14 @@ SELECT ('00000000000000000000000000'::ulid::uuid < '7ZZZZZZZZZZZZZZZZZZZZZZZZZ':
 
 DROP TABLE uuid_col;
 DROP TABLE ulid_col;
+
+-- Binary coercibility: uuid and ulid share an identical on-disk representation,
+-- so ALTER COLUMN ... TYPE is a metadata-only change (same relfilenode = no
+-- table rewrite), and the stored bytes survive unchanged.
+CREATE TABLE migrate_me (id uuid);
+INSERT INTO migrate_me VALUES ('01894698-d2a7-0000-04f9-29ba03be4c04');
+SELECT pg_relation_filenode('migrate_me') AS before_filenode \gset
+ALTER TABLE migrate_me ALTER COLUMN id TYPE ulid;
+SELECT pg_relation_filenode('migrate_me') = :before_filenode AS no_table_rewrite;
+SELECT id AS migrated_value FROM migrate_me;
+DROP TABLE migrate_me;

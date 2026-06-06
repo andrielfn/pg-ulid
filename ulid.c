@@ -23,8 +23,9 @@ struct ulid {
   uint8_t data[ULID_TIMESTAMP_LENGTH + ULID_RANDOM_LENGTH];
 };
 
-// A ULID and a Postgres uuid share the exact same 16-byte big-endian layout,
-// so the uuid <-> ulid casts below are a plain memcpy. Guard the assumption.
+// A ULID and a Postgres uuid share the exact same 16-byte big-endian layout, so
+// the SQL defines uuid <-> ulid as binary-coercible casts (WITHOUT FUNCTION).
+// That is only sound if the lengths truly match -- guard the assumption here.
 StaticAssertDecl(sizeof(((struct ulid *)0)->data) == UUID_LEN,
                  "ulid and uuid must have identical binary length");
 
@@ -65,12 +66,6 @@ Datum ulid_to_timestamp(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(timestamp_to_ulid);
 Datum timestamp_to_ulid(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1(ulid_to_uuid);
-Datum ulid_to_uuid(PG_FUNCTION_ARGS);
-
-PG_FUNCTION_INFO_V1(uuid_to_ulid);
-Datum uuid_to_ulid(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(ulid_to_bytea);
 Datum ulid_to_bytea(PG_FUNCTION_ARGS);
@@ -303,29 +298,6 @@ Datum timestamp_to_ulid(PG_FUNCTION_ARGS) {
     pg_strong_random(&(ulid->data[ULID_TIMESTAMP_LENGTH]), ULID_RANDOM_LENGTH);
     ulid->data[ULID_TIMESTAMP_LENGTH] &= 0x7F;
     PG_RETURN_POINTER(ulid);
-}
-
-// Convert a ULID to a uuid. Both are 16-byte big-endian values with the same
-// layout, so this is a straight byte copy (no base32 round-trip).
-Datum ulid_to_uuid(PG_FUNCTION_ARGS) {
-  struct ulid *ulid = (struct ulid *)PG_GETARG_POINTER(0);
-  pg_uuid_t *uuid = (pg_uuid_t *)palloc(sizeof(pg_uuid_t));
-
-  memcpy(uuid->data, ulid->data, UUID_LEN);
-
-  PG_RETURN_UUID_P(uuid);
-}
-
-// Convert a uuid to a ULID. Pure bit reinterpretation: the leading 48 bits are
-// treated as the ULID timestamp, which is only meaningful if the uuid actually
-// encodes one. The bytes are preserved exactly.
-Datum uuid_to_ulid(PG_FUNCTION_ARGS) {
-  pg_uuid_t *uuid = PG_GETARG_UUID_P(0);
-  struct ulid *ulid = (struct ulid *)palloc(sizeof(struct ulid));
-
-  memcpy(ulid->data, uuid->data, sizeof(ulid->data));
-
-  PG_RETURN_POINTER(ulid);
 }
 
 // Convert a ULID to a 16-byte bytea (the raw big-endian bytes).
