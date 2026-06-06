@@ -12,6 +12,14 @@
 #include "utils/timestamp.h"
 #include "utils/uuid.h"
 
+// The varlena access macros (VARDATA, SET_VARSIZE, VARSIZE_ANY_EXHDR,
+// VARDATA_ANY, ...) used by the bytea casts moved from postgres.h into varatt.h
+// in PostgreSQL 16. Include it explicitly there; earlier versions get them from
+// postgres.h.
+#if PG_VERSION_NUM >= 160000
+#include "varatt.h"
+#endif
+
 #ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
 #endif
