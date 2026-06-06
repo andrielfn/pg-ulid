@@ -8,6 +8,7 @@ The ULID specification provides an excellent alternative to UUIDs, offering sort
 
 - **Blazing-fast performance:** Implemented in **C**, ensuring high-speed operations.
 - **ULID generation:** Built-in support for generating ULIDs using the `gen_ulid()` function.
+- **Monotonic generation:** `gen_ulid()` is monotonic within each millisecond — IDs minted in the same millisecond from one connection are strictly increasing, never colliding, preserving sort order under heavy insert load.
 - **Seamless integration:** Utilizes the **PostgreSQL extension framework**, making installation and usage hassle-free.
 - **Efficient storage:** Employs a **binary storage format**, resulting in more efficient storage compared to using TEXT for ULIDs.
 - **Native data type:** Introduces the **ULID data type**, enabling the creation of ULID columns.
@@ -57,6 +58,13 @@ SELECT * FROM users where id = '01H588JF7X0005PX74XGNZBBGV';
 ```
 
 The `ulid` data type behaves just like any other data type.
+
+`gen_ulid()` is **monotonic**: when multiple ULIDs are generated within the same
+millisecond on a connection, the random component is incremented rather than
+redrawn, so the values are strictly increasing and guaranteed distinct. This
+keeps inserts in sort order even under high throughput. The guarantee is
+per-connection (the generator state is local to each backend), which matches how
+database-side ULID generators behave.
 
 You can also cast ULIDs to timestamps:
 

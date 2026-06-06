@@ -13,3 +13,23 @@ SELECT gen_ulid() <> gen_ulid() AS unique_values;
  t
 (1 row)
 
+-- Monotonicity: a batch generated in one session is strictly increasing, even
+-- for IDs minted within the same millisecond (the random part is incremented).
+CREATE TABLE gen_mono (seq serial, id ulid);
+INSERT INTO gen_mono (id) SELECT gen_ulid() FROM generate_series(1, 50000);
+SELECT bool_and(id > prev) AS strictly_increasing
+FROM (SELECT id, lag(id) OVER (ORDER BY seq) AS prev FROM gen_mono) t
+WHERE prev IS NOT NULL;
+ strictly_increasing 
+---------------------
+ t
+(1 row)
+
+-- And every generated value is distinct.
+SELECT count(DISTINCT id) = count(*) AS all_distinct FROM gen_mono;
+ all_distinct 
+--------------
+ t
+(1 row)
+
+DROP TABLE gen_mono;

@@ -112,6 +112,21 @@ Datum ulid_hash(PG_FUNCTION_ARGS);
 // elog(NOTICE, "Timestamp -----> %lld", ulid->timestamp);
 // elog(NOTICE, "Randomness -----> %lld", ulid->randomness);
 
+// Per-backend state for monotonic generation. The ULID spec defines
+// monotonicity so that IDs generated within the same millisecond stay strictly
+// ordered: instead of drawing fresh entropy, we increment the previous 80-bit
+// random component by one. The state is process-local, so the guarantee is
+// per-connection (the same scope every database-side ULID generator provides).
+static bool have_last_ulid = false;
+static struct ulid last_ulid;
+
+// Read the 48-bit millisecond timestamp out of a ULID's first six bytes.
+__inline__ static uint64_t ulid_timestamp_ms(const struct ulid *ulid) {
+  return ((uint64_t)ulid->data[0] << 40) | ((uint64_t)ulid->data[1] << 32) |
+         ((uint64_t)ulid->data[2] << 24) | ((uint64_t)ulid->data[3] << 16) |
+         ((uint64_t)ulid->data[4] << 8) | ((uint64_t)ulid->data[5]);
+}
+
 __inline__ static void generate_ulid(struct ulid *ulid) {
   struct timespec tp;
   uint64_t timestamp;
@@ -131,14 +146,42 @@ __inline__ static void generate_ulid(struct ulid *ulid) {
   // integer representing the current time in milliseconds.
   timestamp = (uint64_t)tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
 
-  // Encode the lower 6 bytes of the timestamp in the first six bytes of the
-  // ULID data. The reason for encoding the lower 6 bytes of the timestamp is
-  // to reduce the size of the ULID representation. Since a ULID uses a
-  // base32 encoding scheme, each character represents 5 bits of information.
-  // By encoding only the lower 6 bytes (48 bits) of the timestamp instead of
-  // all 8 bytes (64 bits), the resulting ULID will be 2 characters shorter
-  // (6 characters instead of 8 characters). This reduces the length of the
-  // ULID string and saves storage space.
+  // Monotonic path: if the clock has not advanced past the last ULID's
+  // millisecond (same millisecond, or the wall clock stepped backwards, e.g.
+  // an NTP adjustment), keep the previous timestamp and increment the 80-bit
+  // random component by one. This yields a strictly greater ULID -- guaranteed
+  // distinct and ordered -- without re-reading entropy.
+  if (have_last_ulid && timestamp <= ulid_timestamp_ms(&last_ulid)) {
+    int i;
+
+    memcpy(ulid, &last_ulid, sizeof(*ulid));
+
+    // Increment the randomness (bytes 6..15) as an 80-bit big-endian integer,
+    // propagating the carry from the least significant byte upward.
+    for (i = ULID_TIMESTAMP_LENGTH + ULID_RANDOM_LENGTH - 1; i >= ULID_TIMESTAMP_LENGTH; i--) {
+      if (++ulid->data[i] != 0) {
+        break;
+      }
+    }
+
+    // Carry propagated out of the 80-bit random space: more than 2^80 ULIDs in
+    // one millisecond. Physically unreachable; error per the ULID spec.
+    if (i < ULID_TIMESTAMP_LENGTH) {
+      ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+                      errmsg("ULID randomness overflowed within a millisecond")));
+    }
+
+    memcpy(&last_ulid, ulid, sizeof(last_ulid));
+    return;
+  }
+
+  // New millisecond: encode the lower 6 bytes of the timestamp in the first six
+  // bytes of the ULID data. The reason for encoding the lower 6 bytes of the
+  // timestamp is to reduce the size of the ULID representation. Since a ULID
+  // uses a base32 encoding scheme, each character represents 5 bits of
+  // information. By encoding only the lower 6 bytes (48 bits) of the timestamp
+  // instead of all 8 bytes (64 bits), the resulting ULID will be 2 characters
+  // shorter. This reduces the length of the ULID string and saves storage space.
   ulid->data[0] = (uint8_t)(timestamp >> 40);
   ulid->data[1] = (uint8_t)(timestamp >> 32);
   ulid->data[2] = (uint8_t)(timestamp >> 24);
@@ -157,8 +200,13 @@ __inline__ static void generate_ulid(struct ulid *ulid) {
   // of the array.
   pg_strong_random(&(ulid->data[ULID_TIMESTAMP_LENGTH]), ULID_RANDOM_LENGTH);
 
-  // Set the most significant bit of the first entropy byte to 0
+  // Clear the most significant random bit. Besides matching prior behavior,
+  // this leaves the maximum headroom (2^79 values) before a monotonic increment
+  // within the millisecond could overflow.
   ulid->data[ULID_TIMESTAMP_LENGTH] &= 0x7F;
+
+  memcpy(&last_ulid, ulid, sizeof(last_ulid));
+  have_last_ulid = true;
 }
 
 __inline__ static void ulid_to_string(const struct ulid *ulid, char *str) {
