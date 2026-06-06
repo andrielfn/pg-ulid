@@ -51,6 +51,18 @@ CREATE CAST (timestamp AS ulid)
 WITH
     FUNCTION timestamp_to_ulid(timestamp) AS IMPLICIT;
 
+CREATE FUNCTION ulid_to_uuid (ulid) RETURNS uuid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION uuid_to_ulid (uuid) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE CAST (ulid AS uuid)
+WITH
+    FUNCTION ulid_to_uuid (ulid) AS ASSIGNMENT;
+
+CREATE CAST (uuid AS ulid)
+WITH
+    FUNCTION uuid_to_ulid (uuid) AS ASSIGNMENT;
+
 
 --
 -- Operator Functions.

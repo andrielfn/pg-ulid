@@ -13,6 +13,7 @@ The ULID specification provides an excellent alternative to UUIDs, offering sort
 - **Native data type:** Introduces the **ULID data type**, enabling the creation of ULID columns.
 - **Indexing support:** Enables the creation of indexes on ULID columns for improved query performance.
 - **Timestamp casting:** Supports casting ULIDs to timestamps for flexible data manipulation.
+- **UUID casting:** Casts losslessly between `ulid` and the native `uuid` type, making it easy to migrate existing UUID columns.
 - **ULID operators:** Provides a set of operators specifically designed for ULID columns, facilitating query operations.
 - **Optimized performance:** Demonstrates superior performance compared to most other ULID implementations.
 
@@ -73,6 +74,31 @@ And a timestamp to an ULID:
 SELECT '2023-11-16 19:30:15'::timestamp::ulid;
 SELECT timestamp_to_ulid('2023-11-16 19:30:15');
 ```
+
+You can also cast between `ulid` and the native `uuid` type. A ULID and a UUID
+are both 128-bit values with the same binary layout, so the conversion is exact
+and lossless in both directions:
+
+```sql
+SELECT '01H588JF7X0005PX34XGNZBBGV'::ulid::uuid;
+SELECT 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid::ulid;
+```
+
+These casts are defined as `ASSIGNMENT`, so a `ulid` value can be inserted
+directly into a `uuid` column (and vice versa) without an explicit cast — handy
+when migrating an existing `uuid` column to `ulid`:
+
+```sql
+CREATE TABLE legacy (id uuid PRIMARY KEY);
+
+-- a ulid value is converted to uuid automatically on insert
+INSERT INTO legacy (id) VALUES (gen_ulid());
+```
+
+> Note: `uuid` → `ulid` is a pure byte reinterpretation. The leading 48 bits of
+> a UUID are only a meaningful ULID timestamp if the UUID actually encodes one
+> (e.g. a UUIDv4 will decode to an arbitrary timestamp), but the bytes are always
+> preserved exactly on round-trip.
 
 For a more practical example, check out the [IDtools](https://idtools.co/ulid) for ULID generation and decoding.
 
