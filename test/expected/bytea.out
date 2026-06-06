@@ -1,0 +1,43 @@
+CREATE EXTENSION ulid;
+ERROR:  extension "ulid" already exists
+-- ulid -> bytea is the raw 16-byte big-endian value (matches the uuid bytes)
+SELECT '01H539HMN700009Y99Q81VWK04'::ulid::bytea AS ulid_bytes;
+             ulid_bytes             
+------------------------------------
+ \x01894698d2a7000004f929ba03be4c04
+(1 row)
+
+SELECT length('01H539HMN700009Y99Q81VWK04'::ulid::bytea) AS byte_length;
+ byte_length 
+-------------
+          16
+(1 row)
+
+-- Round-trip: ulid -> bytea -> ulid is identity
+SELECT '01H539HMN700009Y99Q81VWK04'::ulid::bytea::ulid AS ulid_roundtrip;
+       ulid_roundtrip       
+----------------------------
+ 01H539HMN700009Y99Q81VWK04
+(1 row)
+
+-- Round-trip: bytea -> ulid -> bytea is identity
+SELECT '\x01894698d2a7000004f929ba03be4c04'::bytea::ulid::bytea
+       = '\x01894698d2a7000004f929ba03be4c04'::bytea AS bytea_roundtrip;
+ bytea_roundtrip 
+-----------------
+ t
+(1 row)
+
+-- A generated ULID round-trips through bytea
+WITH g AS (SELECT gen_ulid() AS u)
+SELECT u::bytea::ulid = u AS gen_roundtrip FROM g;
+ gen_roundtrip 
+---------------
+ t
+(1 row)
+
+-- Wrong length is rejected (too short and too long)
+SELECT '\xdeadbeef'::bytea::ulid;
+ERROR:  Invalid ULID: bytea must be exactly 16 bytes
+SELECT '\x01894698d2a7000004f929ba03be4c0400'::bytea::ulid;
+ERROR:  Invalid ULID: bytea must be exactly 16 bytes

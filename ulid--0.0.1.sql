@@ -82,6 +82,21 @@ CREATE CAST (uuid AS ulid)
 WITH
     FUNCTION uuid_to_ulid (uuid) AS ASSIGNMENT;
 
+-- Raw 16-byte access. bytea is an untyped blob, so these casts are explicit
+-- only (no implicit/assignment coercion) to avoid surprising conversions; the
+-- bytea -> ulid direction validates the length is exactly 16 bytes.
+CREATE FUNCTION ulid_to_bytea (ulid) RETURNS bytea AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION bytea_to_ulid (bytea) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE CAST (ulid AS bytea)
+WITH
+    FUNCTION ulid_to_bytea (ulid);
+
+CREATE CAST (bytea AS ulid)
+WITH
+    FUNCTION bytea_to_ulid (bytea);
+
 
 --
 -- Operator Functions.

@@ -72,6 +72,12 @@ Datum ulid_to_uuid(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1(uuid_to_ulid);
 Datum uuid_to_ulid(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1(ulid_to_bytea);
+Datum ulid_to_bytea(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1(bytea_to_ulid);
+Datum bytea_to_ulid(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1(ulid_in);
 Datum ulid_in(PG_FUNCTION_ARGS);
 
@@ -318,6 +324,34 @@ Datum uuid_to_ulid(PG_FUNCTION_ARGS) {
   struct ulid *ulid = (struct ulid *)palloc(sizeof(struct ulid));
 
   memcpy(ulid->data, uuid->data, sizeof(ulid->data));
+
+  PG_RETURN_POINTER(ulid);
+}
+
+// Convert a ULID to a 16-byte bytea (the raw big-endian bytes).
+Datum ulid_to_bytea(PG_FUNCTION_ARGS) {
+  struct ulid *ulid = (struct ulid *)PG_GETARG_POINTER(0);
+  bytea *result = (bytea *)palloc(VARHDRSZ + sizeof(ulid->data));
+
+  SET_VARSIZE(result, VARHDRSZ + sizeof(ulid->data));
+  memcpy(VARDATA(result), ulid->data, sizeof(ulid->data));
+
+  PG_RETURN_BYTEA_P(result);
+}
+
+// Convert a bytea to a ULID. The input must be exactly 16 bytes.
+Datum bytea_to_ulid(PG_FUNCTION_ARGS) {
+  bytea *data = PG_GETARG_BYTEA_PP(0);
+  struct ulid *ulid;
+
+  if (VARSIZE_ANY_EXHDR(data) != ULID_TIMESTAMP_LENGTH + ULID_RANDOM_LENGTH) {
+    ereport(ERROR, (errcode(ERRCODE_INVALID_BINARY_REPRESENTATION),
+                    errmsg("Invalid ULID: bytea must be exactly %d bytes",
+                           ULID_TIMESTAMP_LENGTH + ULID_RANDOM_LENGTH)));
+  }
+
+  ulid = (struct ulid *)palloc(sizeof(struct ulid));
+  memcpy(ulid->data, VARDATA_ANY(data), sizeof(ulid->data));
 
   PG_RETURN_POINTER(ulid);
 }

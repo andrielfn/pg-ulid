@@ -116,6 +116,15 @@ INSERT INTO legacy (id) VALUES (gen_ulid());
 > (e.g. a UUIDv4 will decode to an arbitrary timestamp), but the bytes are always
 > preserved exactly on round-trip.
 
+For raw access you can also cast a ULID to and from `bytea` — the 16 raw
+big-endian bytes. These casts are **explicit only** (no implicit/assignment
+coercion), and `bytea → ulid` requires exactly 16 bytes:
+
+```sql
+SELECT '01H588JF7X0005PX34XGNZBBGV'::ulid::bytea;
+SELECT '\x01894698d2a7000004f929ba03be4c04'::bytea::ulid;
+```
+
 For a more practical example, check out the [IDtools](https://idtools.co/ulid) for ULID generation and decoding.
 
 ## Benchmark
