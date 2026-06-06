@@ -7,7 +7,9 @@ CREATE FUNCTION gen_ulid () RETURNS ulid AS 'ulid' LANGUAGE C STRICT PARALLEL SA
 
 CREATE FUNCTION ulid_to_timestamp (ulid) RETURNS TIMESTAMP AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
 
-CREATE FUNCTION timestamp_to_ulid (TIMESTAMP) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+-- VOLATILE: this draws fresh randomness, so it must not be constant-folded
+-- (otherwise a constant input would yield the same ULID for every row).
+CREATE FUNCTION timestamp_to_ulid (TIMESTAMP) RETURNS ulid AS 'ulid' LANGUAGE C VOLATILE STRICT;
 
 
 --
@@ -50,6 +52,23 @@ WITH
 CREATE CAST (timestamp AS ulid)
 WITH
     FUNCTION timestamp_to_ulid(timestamp) AS IMPLICIT;
+
+-- Timezone-aware variants (recommended). A ULID encodes a UTC instant, so the
+-- natural Postgres type is timestamptz. The underlying C already computes a true
+-- UTC instant, so these casts respect the session time zone and round-trip the
+-- instant exactly (and they make now()::ulid work). The plain `timestamp` casts
+-- above are kept for backward compatibility and treat values as UTC wall-clock.
+CREATE FUNCTION ulid_to_timestamptz (ulid) RETURNS timestamptz AS 'ulid', 'ulid_to_timestamp' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION timestamptz_to_ulid (timestamptz) RETURNS ulid AS 'ulid', 'timestamp_to_ulid' LANGUAGE C VOLATILE STRICT;
+
+CREATE CAST (ulid AS timestamptz)
+WITH
+    FUNCTION ulid_to_timestamptz (ulid) AS ASSIGNMENT;
+
+CREATE CAST (timestamptz AS ulid)
+WITH
+    FUNCTION timestamptz_to_ulid (timestamptz) AS ASSIGNMENT;
 
 CREATE FUNCTION ulid_to_uuid (ulid) RETURNS uuid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 

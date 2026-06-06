@@ -66,21 +66,29 @@ keeps inserts in sort order even under high throughput. The guarantee is
 per-connection (the generator state is local to each backend), which matches how
 database-side ULID generators behave.
 
-You can also cast ULIDs to timestamps:
+A ULID embeds a creation time, which you can extract by casting to a timestamp.
+Because a ULID encodes an absolute UTC instant, the **`timestamptz`** casts are
+recommended — they respect the session time zone and round-trip the instant
+exactly:
 
-It's also possible to cast the ULIDs to a timestamp:
+```sql
+SELECT '01H588JF7X0005PX34XGNZBBGV'::ulid::timestamptz;
+SELECT ulid_to_timestamptz('01H588JF7X0005PX34XGNZBBGV');
+SELECT id, id::timestamptz FROM users;
+
+-- and the other direction (now() is a timestamptz)
+SELECT now()::ulid;
+SELECT '2023-11-16 19:30:15+00'::timestamptz::ulid;
+SELECT timestamptz_to_ulid('2023-11-16 19:30:15+00');
+```
+
+Plain `timestamp` (without time zone) casts are also available for backward
+compatibility; they treat the value as UTC wall-clock and ignore the session
+time zone:
 
 ```sql
 SELECT '01H588JF7X0005PX34XGNZBBGV'::ulid::timestamp;
-SELECT ulid_to_timestamp('01H588JF7X0005PX34XGNZBBGV');
-SELECT id, id::timestamp FROM users;
-```
-
-And a timestamp to an ULID:
-
-```sql
 SELECT '2023-11-16 19:30:15'::timestamp::ulid;
-SELECT timestamp_to_ulid('2023-11-16 19:30:15');
 ```
 
 You can also cast between `ulid` and the native `uuid` type. A ULID and a UUID
