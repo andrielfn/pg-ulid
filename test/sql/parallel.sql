@@ -1,0 +1,55 @@
+CREATE EXTENSION ulid;
+
+-- Every function the extension owns must be PARALLEL SAFE.
+--
+-- This is not cosmetic. A single parallel-unsafe function anywhere in a plan bars
+-- the WHOLE plan from parallel execution, and ulid_eq backs the `=` operator -- so
+-- one unmarked function silently forces every join on a ulid column to run
+-- single-threaded. 0.0.1 shipped 14 of 19 functions unmarked and this went
+-- unnoticed until a 33.6M-row join was measured at 24.5s that should have taken 8s.
+--
+-- Written against the catalog rather than a fixed list so a function added later
+-- without the marking fails here too.
+SELECT p.proname, p.proparallel
+FROM pg_proc p
+JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
+JOIN pg_extension e ON e.oid = d.refobjid
+WHERE e.extname = 'ulid'
+  AND p.proparallel <> 's'
+ORDER BY p.proname;
+
+-- Guard against the inverse failure: if the join above ever silently matches
+-- nothing (renamed extension, changed dependency encoding), the emptiness check
+-- would pass for the wrong reason.
+SELECT count(*) > 0 AS found_extension_functions
+FROM pg_proc p
+JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
+JOIN pg_extension e ON e.oid = d.refobjid
+WHERE e.extname = 'ulid';
+
+-- End-to-end: a join on a ulid column must actually produce a parallel plan.
+-- The catalog check above would catch an unmarked function, but this proves the
+-- thing we actually care about -- that ulid_eq no longer vetoes parallelism.
+--
+-- Zeroing the cost knobs (rather than debug_parallel_query, which is named
+-- force_parallel_mode before PG16 and so cannot be used across the test matrix)
+-- makes the planner pick parallelism wherever it is legal, on every supported major.
+SET parallel_setup_cost = 0;
+SET parallel_tuple_cost = 0;
+SET min_parallel_table_scan_size = 0;
+SET max_parallel_workers_per_gather = 2;
+
+CREATE TABLE parallel_ulids (id ulid, ref ulid);
+INSERT INTO parallel_ulids
+SELECT gen_ulid(), gen_ulid() FROM generate_series(1, 2000);
+ANALYZE parallel_ulids;
+
+-- Expect a Gather over a parallel scan; before the 0.0.2 markings this planned serially.
+EXPLAIN (COSTS OFF)
+SELECT count(*) FROM parallel_ulids a JOIN parallel_ulids b ON a.id = b.id;
+
+RESET max_parallel_workers_per_gather;
+RESET min_parallel_table_scan_size;
+RESET parallel_tuple_cost;
+RESET parallel_setup_cost;
+DROP TABLE parallel_ulids;

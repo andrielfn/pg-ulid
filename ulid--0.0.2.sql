@@ -5,23 +5,26 @@ CREATE TYPE ulid;
 --
 CREATE FUNCTION gen_ulid () RETURNS ulid AS 'ulid' LANGUAGE C STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_to_timestamp (ulid) RETURNS TIMESTAMP AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_to_timestamp (ulid) RETURNS TIMESTAMP AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- VOLATILE: this draws fresh randomness, so it must not be constant-folded
 -- (otherwise a constant input would yield the same ULID for every row).
-CREATE FUNCTION timestamp_to_ulid (TIMESTAMP) RETURNS ulid AS 'ulid' LANGUAGE C VOLATILE STRICT;
+-- VOLATILE + PARALLEL SAFE is not a contradiction: volatility governs constant
+-- folding, parallel safety governs what may run in a worker. This draws its own
+-- entropy and touches no shared state, exactly like core Postgres's random().
+CREATE FUNCTION timestamp_to_ulid (TIMESTAMP) RETURNS ulid AS 'ulid' LANGUAGE C VOLATILE STRICT PARALLEL SAFE;
 
 
 --
 --  Input and output functions.
 --
-CREATE FUNCTION ulid_in (cstring) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_in (cstring) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_out (ulid) RETURNS cstring AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_out (ulid) RETURNS cstring AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_recv (internal) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_recv (internal) RETURNS ulid AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_send (ulid) RETURNS bytea AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_send (ulid) RETURNS bytea AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 --
 --  The type itself.
@@ -64,7 +67,7 @@ WITH
 -- above are kept for backward compatibility and treat values as UTC wall-clock.
 CREATE FUNCTION ulid_to_timestamptz (ulid) RETURNS timestamptz AS 'ulid', 'ulid_to_timestamp' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION timestamptz_to_ulid (timestamptz) RETURNS ulid AS 'ulid', 'timestamp_to_ulid' LANGUAGE C VOLATILE STRICT;
+CREATE FUNCTION timestamptz_to_ulid (timestamptz) RETURNS ulid AS 'ulid', 'timestamp_to_ulid' LANGUAGE C VOLATILE STRICT PARALLEL SAFE;
 
 CREATE CAST (ulid AS timestamptz)
 WITH
@@ -101,17 +104,17 @@ WITH
 --
 -- Operator Functions.
 --
-CREATE FUNCTION ulid_eq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_eq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_neq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_neq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_leq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_leq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_lt (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_lt (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_geq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_geq (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION ulid_gt (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_gt (ulid, ulid) RETURNS BOOLEAN AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 --
 -- Operators.
@@ -181,7 +184,7 @@ CREATE OPERATOR >= (
 --
 -- Support functions for indexing.
 --
-CREATE FUNCTION ulid_cmp (ulid, ulid) RETURNS INT AS 'ulid' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION ulid_cmp (ulid, ulid) RETURNS INT AS 'ulid' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR CLASS btree_ulid_ops DEFAULT FOR TYPE ulid USING btree AS OPERATOR 1 <,
 OPERATOR 2 <=,
