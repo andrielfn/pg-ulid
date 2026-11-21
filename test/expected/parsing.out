@@ -46,3 +46,18 @@ SELECT '01H539HMN700009Y99Q81VWK04XX'::ulid;
 ERROR:  Invalid ULID: incorrect size
 LINE 1: SELECT '01H539HMN700009Y99Q81VWK04XX'::ulid;
                ^
+-- Values above 7ZZZZZZZZZZZZZZZZZZZZZZZZZ do not fit in 128 bits
+SELECT '7ZZZZZZZZZZZZZZZZZZZZZZZZZ'::ulid;
+            ulid            
+----------------------------
+ 7ZZZZZZZZZZZZZZZZZZZZZZZZZ
+(1 row)
+
+SELECT '8ZZZZZZZZZZZZZZZZZZZZZZZZZ'::ulid;
+ERROR:  Invalid ULID: out of range
+LINE 1: SELECT '8ZZZZZZZZZZZZZZZZZZZZZZZZZ'::ulid;
+               ^
+SELECT 'zzzzzzzzzzzzzzzzzzzzzzzzzz'::ulid;
+ERROR:  Invalid ULID: out of range
+LINE 1: SELECT 'zzzzzzzzzzzzzzzzzzzzzzzzzz'::ulid;
+               ^

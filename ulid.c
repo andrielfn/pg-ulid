@@ -374,6 +374,13 @@ Datum ulid_in(PG_FUNCTION_ARGS) {
     ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("Invalid ULID: incorrect size")));
   }
 
+  // 26 characters hold 130 bits, but a ULID has 128: the first character
+  // carries only 3 bits, so anything above 7ZZZZZZZZZZZZZZZZZZZZZZZZZ would
+  // lose its top bits in decodeULIDString.
+  if (decodeULIDChar(ulid_str[0]) > 7) {
+    ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("Invalid ULID: out of range")));
+  }
+
   decodeULIDString(ulid_str, ulid->data);
 
   PG_RETURN_POINTER(ulid);
