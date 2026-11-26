@@ -29,3 +29,13 @@ SELECT '2023-07-12 19:53:43.401+00'::timestamptz
 -- now()::ulid works (timestamptz -> ulid) and round-trips to within a millisecond.
 SELECT (now() - now()::ulid::timestamptz) < interval '1 second' AS now_roundtrip_close;
 RESET TIME ZONE;
+
+-- A ULID holds 48 bits of milliseconds since 1970-01-01 UTC. Timestamps outside
+-- that range must be rejected, not silently wrapped to a far-future ULID.
+SELECT ('1970-01-01 00:00:00'::timestamp)::ulid::timestamp AS min_timestamp;
+SELECT ('10889-08-02 05:31:50.655'::timestamp)::ulid::timestamp AS max_timestamp;
+SELECT ('1969-12-31 23:59:59'::timestamp)::ulid;
+SELECT ('10889-08-02 05:31:50.656'::timestamp)::ulid;
+SELECT ('infinity'::timestamp)::ulid;
+SELECT ('-infinity'::timestamp)::ulid;
+SELECT timestamptz_to_ulid('1969-12-31 23:59:59+00'::timestamptz);
