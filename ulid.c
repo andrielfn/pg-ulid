@@ -26,6 +26,8 @@ PG_MODULE_MAGIC;
 
 #define ULID_TIMESTAMP_LENGTH 6
 #define ULID_RANDOM_LENGTH 10
+// Largest millisecond timestamp that fits in a ULID's 48-bit time field.
+#define ULID_MAX_TIMESTAMP_MS ((INT64CONST(1) << 48) - 1)
 
 struct ulid {
   uint8_t data[ULID_TIMESTAMP_LENGTH + ULID_RANDOM_LENGTH];
@@ -291,8 +293,23 @@ Datum timestamp_to_ulid(PG_FUNCTION_ARGS) {
     TimestampTz ts = PG_GETARG_TIMESTAMPTZ(0);
     struct ulid *ulid = (struct ulid *)palloc(sizeof(struct ulid));
 
-    // Convert the timestamp to milliseconds
-    uint64_t timestamp = (uint64_t)(ts / 1000) + EpochMillis;
+    int64 ms;
+    uint64_t timestamp;
+
+    if (TIMESTAMP_NOT_FINITE(ts)) {
+      ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                      errmsg("timestamp out of range for ULID")));
+    }
+
+    // Convert the timestamp to milliseconds since the Unix epoch. A ULID holds
+    // only 48 unsigned bits of it, so anything before 1970-01-01 or after
+    // 10889-08-02 05:31:50.655 UTC would wrap around to a wrong time.
+    ms = ts / 1000 + (int64)EpochMillis;
+    if (ms < 0 || ms > ULID_MAX_TIMESTAMP_MS) {
+      ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                      errmsg("timestamp out of range for ULID")));
+    }
+    timestamp = (uint64_t)ms;
 
     // Encode the timestamp in ULID format
     ulid->data[0] = (uint8_t)(timestamp >> 40);
